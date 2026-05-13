@@ -14,6 +14,14 @@ import (
 
 var defaultUserAgent = "go.xstream-codes (Go-http-client/1.1)"
 
+type StatusCodeError struct {
+	StatusCode int
+}
+
+func (e *StatusCodeError) Error() string {
+	return fmt.Sprintf("status code was %d, expected 2XX-3XX", e.StatusCode)
+}
+
 // XtreamClient is the client used to communicate with a Xtream-Codes server.
 type XtreamClient struct {
 	Username  string
@@ -54,7 +62,7 @@ func NewClient(username, password, baseURL string) (*XtreamClient, error) {
 
 	authData, authErr := client.sendRequest("", nil)
 	if authErr != nil {
-		return nil, fmt.Errorf("error sending authentication request: %s", authErr.Error())
+		return nil, fmt.Errorf("error sending authentication request: %w", authErr)
 	}
 
 	a := &AuthenticationResponse{}
@@ -330,7 +338,7 @@ func (c *XtreamClient) sendRequest(action string, parameters url.Values) ([]byte
 	}
 
 	if response.StatusCode > 399 {
-		return nil, fmt.Errorf("status code was %d, expected 2XX-3XX", response.StatusCode)
+		return nil, &StatusCodeError{StatusCode: response.StatusCode}
 	}
 
 	buf := &bytes.Buffer{}

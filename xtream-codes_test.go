@@ -5,6 +5,7 @@ package xtreamcodes
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -213,4 +214,24 @@ func getClient(t *testing.T, providerName string) *XtreamClient {
 		return nil
 	}
 	return xc
+}
+
+func TestStatusCodeError(t *testing.T) {
+	serv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer serv.Close()
+
+	_, err := NewClient("user", "pass", serv.URL)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	var sce *StatusCodeError
+	if !errors.As(err, &sce) {
+		t.Fatalf("expected StatusCodeError, got %T: %v", err, err)
+	}
+	if sce.StatusCode != http.StatusForbidden {
+		t.Fatalf("expected status 403, got %d", sce.StatusCode)
+	}
 }
