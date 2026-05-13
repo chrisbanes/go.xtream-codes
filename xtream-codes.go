@@ -10,9 +10,21 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 )
 
-var defaultUserAgent = "go.xstream-codes (Go-http-client/1.1)"
+var defaultUserAgent = "curl/8.7.1"
+
+var defaultHTTPClient = &http.Client{
+	Timeout: 30 * time.Second,
+	Transport: &http.Transport{
+		ForceAttemptHTTP2:     false,
+		MaxIdleConns:          10,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:  10 * time.Second,
+		ResponseHeaderTimeout: 10 * time.Second,
+	},
+}
 
 type StatusCodeError struct {
 	StatusCode int
@@ -54,7 +66,7 @@ func NewClient(username, password, baseURL string) (*XtreamClient, error) {
 		BaseURL:   baseURL,
 		UserAgent: defaultUserAgent,
 
-		HTTP:    http.DefaultClient,
+		HTTP:    defaultHTTPClient,
 		Context: context.Background(),
 
 		streams: make(map[int]Stream),
